@@ -1,0 +1,10 @@
+[
+  {
+    "name": "sample-R1-perfect-fit",
+    "sample_bundle": "samples/R1_perfect_fit/bundle.json"
+  },
+  {
+    "name": "sample-R13-underhang-tolerance",
+    "sample_bundle": "samples/R13_underhang_tolerance/bundle.json"
+  }
+]

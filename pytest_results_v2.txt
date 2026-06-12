@@ -1,0 +1,9 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-8.3.4, pluggy-1.6.0 -- C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach
+plugins: anyio-4.13.0
+collecting ... collected 5 items
+
+scripts/tests/test_solver_centered_strict_tolerances.py::test_zero_overhang_exact_fit_returns_feasible_solution PASSED [ 20%]
+scripts/tests/test_solver_centered_strict_tolerances.py::test_small_underhang_anchor_rule_passes_when_one_side_within_limit 

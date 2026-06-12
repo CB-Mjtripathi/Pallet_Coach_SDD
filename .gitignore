@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+UI/pallet_coach_ui/node_modules/
+UI/pallet_coach_ui/dist/
+
+# Local environment secrets
+env.ai
+
+# Outputs and traces
+04_Output/
+ai_traces/

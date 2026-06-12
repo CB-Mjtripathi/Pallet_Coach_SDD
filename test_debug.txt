@@ -1,0 +1,30 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.3, pytest-8.3.4, pluggy-1.6.0 -- C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach
+plugins: anyio-4.13.0
+collecting ... collected 1 item
+
+scripts/tests/test_api_app.py::test_valid_solve_creates_run_and_bundle_and_output_accessible PASSED
+
+============================== warnings summary ===============================
+scripts\pallet_coach\api\app.py:57
+  C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\scripts\pallet_coach\api\app.py:57: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv\Lib\site-packages\fastapi\applications.py:4598
+  C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\.venv\Lib\site-packages\fastapi\applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 1 passed, 2 warnings in 110.93s (0:01:50) ==================

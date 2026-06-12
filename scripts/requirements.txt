@@ -1,0 +1,11 @@
+pytest==8.3.4
+fastapi==0.135.2
+uvicorn==0.32.1
+pydantic>=2.11
+httpx==0.28.1
+matplotlib>=3.8
+python-pptx==1.0.2
+pypdf==6.9.2
+extract-msg==0.52.0
+python-dotenv==1.0.1
+plotly==5.24.1

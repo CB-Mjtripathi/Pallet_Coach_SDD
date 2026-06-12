@@ -1,0 +1,69 @@
+{
+  "run_id": "R1_perfect_fit",
+  "request": {
+    "pallet": {
+      "type": "euro",
+      "length_mm": 1200,
+      "width_mm": 800
+    },
+    "case": {
+      "length_mm": 300,
+      "width_mm": 200,
+      "height_mm": 150
+    },
+    "stack": {
+      "layer_count": 8
+    },
+    "tolerances": {
+      "max_overhang_l_mm": 0,
+      "max_overhang_w_mm": 0,
+      "max_underhang_l_mm": 20,
+      "max_underhang_w_mm": 20
+    },
+    "constraints": {
+      "allow_rotation_90": true,
+      "allow_interlock": false,
+      "auto_underhang": false
+    }
+  },
+  "reference": {
+    "expected": {
+      "status": "ok",
+      "top_solution_id": "grid_4x4_rot0",
+      "top_metrics": {
+        "cases_per_layer": 16,
+        "total_cases": 128,
+        "total_height_mm": 1344,
+        "area_fill_efficiency_pct": 100.0,
+        "footprint_bbox_mm": {
+          "min_x_mm": 0.0,
+          "min_y_mm": 0,
+          "max_x_mm": 1200.0,
+          "max_y_mm": 800
+        },
+        "edge_clearance_mm": {
+          "left_mm": 0.0,
+          "right_mm": 0.0,
+          "bottom_mm": 0,
+          "top_mm": 0
+        },
+        "tolerance_pass": true,
+        "interlock": false
+      },
+      "stacking": {
+        "current_layers": 8,
+        "current_stack_height_mm": 1344,
+        "headroom_mm": 656,
+        "height_ceiling_layers": 12,
+        "effective_ceiling_layers": 12,
+        "recommended_layers_range": {
+          "min": 9,
+          "max": 11
+        }
+      }
+    }
+  },
+  "recommender": {
+    "status": "ok"
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "case_count": 4,
+    "sample_parity_enabled": false
+  },
+  "cases": [
+    {
+      "name": "perfect-fit",
+      "passed": true,
+      "message": "ok",
+      "diffs": [],
+      "expected": {
+        "status": "ok",
+        "min_cases_per_layer": 16,
+        "top_solution_id": "grid_4x4_rot0",
+        "expected_top_metrics": {
+          "cases_per_layer": 16,
+          "total_height_mm": 1344,
+          "edge_clearance_mm": {
+            "left_mm": 0,
+            "right_mm": 0,
+            "bottom_mm": 0,
+            "top_mm": 0
+          }
+        },
+        "expected_stacking": {
+          "current_layers": 8,
+          "height_ceiling_layers": 12,
+          "recommended_layers_range": {
+            "min": 9,
+            "max": 11
+          }
+        }
+      },
+      "actual": {
+        "status": "ok",
+        "top_solution_id": "grid_4x4_rot0",
+        "top_metrics": {
+          "cases_per_layer": 16,
+          "total_cases": 128,
+          "total_height_mm": 1344,
+          "total_weight_kg": null,
+          "area_fill_efficiency_pct": 100.0,
+          "footprint_bbox_mm": {
+            "min_x_mm": 0.0,
+            "min_y_mm": 0,
+            "max_x_mm": 1200.0,
+            "max_y_mm": 800
+          },
+          "edge_clearance_mm": {
+            "left_mm": 0.0,
+            "right_mm": 0.0,
+            "bottom_mm": 0,
+            "top_mm": 0
+          },
+          "tolerance_pass": true,
+          "inner_axis_segments_mm": {
+            "x_segments_mm": [
+              300.0,
+              300.0,
+              300.0,
+              300.0
+            ],
+            "y_segments_mm": [
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          "interlock": false
+        },
+        "stacking": {
+          "current_layers": 8,
+          "max_stack_height_mm": 2000,
+          "pallet_height_mm": 144,
+          "current_stack_height_mm": 1344,
+          "headroom_mm": 656,
+          "height_ceiling_layers": 12,
+          "weight_ceiling_layers": null,
+          "effective_ceiling_layers": 12,
+          "recommended_layers_range": {
+            "min": 9,
+            "max": 11
+          },
+          "max_layers_at_max_height": 12,
+          "addable_layers_to_max_height": 4,
+          "warnings": [],
+          "assumptions": {
+            "pallet_height_mm": 144,
+            "max_stack_height_mm": 2000
+          }
+        }
+      }
+    },
+    {
+      "name": "underhang-tolerance",
+      "passed": true,
+      "message": "ok",
+      "diffs": [],
+      "expected": {
+        "status": "ok",
+        "min_cases_per_layer": 20,
+        "top_solution_id": "grid_4x5_rot0",
+        "expected_top_metrics": {
+          "cases_per_layer": 20,
+          "total_height_mm": 1344,
+          "edge_clearance_mm": {
+            "left_mm": 0,
+            "right_mm": 40,
+            "bottom_mm": 0,
+            "top_mm": 0
+          }
+        }
+      },
+      "actual": {
+        "status": "ok",
+        "top_solution_id": "grid_4x5_rot0",
+        "top_metrics": {
+          "cases_per_layer": 20,
+          "total_cases": 160,
+          "total_height_mm": 1344,
+          "total_weight_kg": null,
+          "area_fill_efficiency_pct": 96.666667,
+          "footprint_bbox_mm": {
+            "min_x_mm": 0.0,
+            "min_y_mm": 0,
+            "max_x_mm": 1160.0,
+            "max_y_mm": 1000
+          },
+          "edge_clearance_mm": {
+            "left_mm": 0.0,
+            "right_mm": 40.0,
+            "bottom_mm": 0,
+            "top_mm": 0
+          },
+          "tolerance_pass": true,
+          "inner_axis_segments_mm": {
+            "x_segments_mm": [
+              290.0,
+              290.0,
+              290.0,
+              290.0
+            ],
+            "y_segments_mm": [
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          "interlock": false
+        },
+        "stacking": {
+          "current_layers": 8,
+          "max_stack_height_mm": 2000,
+          "pallet_height_mm": 144,
+          "current_stack_height_mm": 1344,
+          "headroom_mm": 656,
+          "height_ceiling_layers": 12,
+          "weight_ceiling_layers": null,
+          "effective_ceiling_layers": 12,
+          "recommended_layers_range": {
+            "min": 9,
+            "max": 11
+          },
+          "max_layers_at_max_height": 12,
+          "addable_layers_to_max_height": 4,
+          "warnings": [],
+          "assumptions": {
+            "pallet_height_mm": 144,
+            "max_stack_height_mm": 2000
+          }
+        }
+      }
+    },
+    {
+      "name": "impossible",
+      "passed": true,
+      "message": "ok",
+      "diffs": [],
+      "expected": {
+        "status": "impossible"
+      },
+      "actual": {
+        "status": "impossible",
+        "top_solution_id": null,
+        "top_metrics": null,
+        "stacking": {
+          "current_layers": 4,
+          "max_stack_height_mm": 2000,
+          "pallet_height_mm": 144,
+          "current_stack_height_mm": 544,
+          "headroom_mm": 1456,
+          "height_ceiling_layers": 18,
+          "weight_ceiling_layers": null,
+          "effective_ceiling_layers": 18,
+          "recommended_layers_range": {
+            "min": 5,
+            "max": 7
+          },
+          "max_layers_at_max_height": 18,
+          "addable_layers_to_max_height": 14,
+          "warnings": [],
+          "assumptions": {
+            "pallet_height_mm": 144,
+            "max_stack_height_mm": 2000
+          }
+        }
+      }
+    },
+    {
+      "name": "rotation-required",
+      "passed": true,
+      "message": "ok",
+      "diffs": [],
+      "expected": {
+        "status": "ok",
+        "must_include_solution_suffix": "rot90"
+      },
+      "actual": {
+        "status": "ok",
+        "top_solution_id": "grid_1x1_rot90",
+        "top_metrics": {
+          "cases_per_layer": 1,
+          "total_cases": 2,
+          "total_height_mm": 344,
+          "total_weight_kg": null,
+          "area_fill_efficiency_pct": 75.0,
+          "footprint_bbox_mm": {
+            "min_x_mm": 0.0,
+            "min_y_mm": 0,
+            "max_x_mm": 300.0,
+            "max_y_mm": 500
+          },
+          "edge_clearance_mm": {
+            "left_mm": 0.0,
+            "right_mm": 100.0,
+            "bottom_mm": 0,
+            "top_mm": 0
+          },
+          "tolerance_pass": true,
+          "inner_axis_segments_mm": {
+            "x_segments_mm": [
+              300.0
+            ],
+            "y_segments_mm": [
+              500
+            ]
+          },
+          "interlock": false
+        },
+        "stacking": {
+          "current_layers": 2,
+          "max_stack_height_mm": 2000,
+          "pallet_height_mm": 144,
+          "current_stack_height_mm": 344,
+          "headroom_mm": 1656,
+          "height_ceiling_layers": 18,
+          "weight_ceiling_layers": null,
+          "effective_ceiling_layers": 18,
+          "recommended_layers_range": {
+            "min": 3,
+            "max": 5
+          },
+          "max_layers_at_max_height": 18,
+          "addable_layers_to_max_height": 16,
+          "warnings": [],
+          "assumptions": {
+            "pallet_height_mm": 144,
+            "max_stack_height_mm": 2000
+          }
+        }
+      }
+    }
+  ],
+  "sample_parity": null
+}

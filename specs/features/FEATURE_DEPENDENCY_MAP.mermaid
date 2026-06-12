@@ -1,0 +1,36 @@
+graph LR
+    subgraph Core
+        RF001[RF-001<br/>Core Solver Engine]
+        RF003[RF-003<br/>Artifact Pipeline]
+        RF007[RF-007<br/>Testing and Quality Gates]
+        RF009[RF-009<br/>Hi-Res 3D Layer View]
+    end
+
+    subgraph Services
+        RF002[RF-002<br/>API and Run Management]
+        RF004[RF-004<br/>AI Integrations]
+        RF008[RF-008<br/>Deployment and Ops]
+    end
+
+    subgraph Frontend
+        RF005[RF-005<br/>React UI Home and Run]
+        RF006[RF-006<br/>UI Design System]
+    end
+
+    RF001 --> RF002
+    RF001 --> RF003
+    RF002 --> RF005
+    RF003 --> RF005
+    RF004 --> RF005
+    RF005 --> RF006
+    RF001 --> RF007
+    RF002 --> RF007
+    RF003 --> RF007
+    RF004 --> RF007
+    RF002 --> RF008
+    RF004 --> RF008
+    RF007 --> RF008
+    RF003 --> RF009
+    RF005 --> RF009
+    RF006 --> RF009
+    RF009 --> RF007

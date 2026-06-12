@@ -1,0 +1,22 @@
+...                                                                      [100%]
+============================== warnings summary ===============================
+scripts\pallet_coach\api\app.py:56
+  C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\scripts\pallet_coach\api\app.py:56: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+.venv\Lib\site-packages\fastapi\applications.py:4598
+  C:\Users\INTRIMRI\OneDrive - Carlsberg Group\Documents\Project_PalletCoach\.venv\Lib\site-packages\fastapi\applications.py:4598: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 2 warnings in 135.82s (0:02:15)

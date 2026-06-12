@@ -1,0 +1,106 @@
+[
+  {
+    "name": "perfect-fit",
+    "input": {
+      "request": {
+        "pallet": {"type": "euro", "length_mm": 1200, "width_mm": 800},
+        "case": {"length_mm": 300, "width_mm": 200, "height_mm": 150},
+        "stack": {"layer_count": 8},
+        "tolerances": {
+          "max_overhang_l_mm": 0,
+          "max_overhang_w_mm": 0,
+          "max_underhang_l_mm": 20,
+          "max_underhang_w_mm": 20
+        },
+        "constraints": {
+          "allow_rotation_90": true,
+          "allow_interlock": false,
+          "auto_underhang": false
+        }
+      }
+    },
+    "expected": {
+      "status": "ok",
+      "min_cases_per_layer": 16,
+      "top_solution_id": "grid_4x4_rot0",
+      "expected_top_metrics": {
+        "cases_per_layer": 16,
+        "total_height_mm": 1344,
+        "edge_clearance_mm": {
+          "left_mm": 0,
+          "right_mm": 0,
+          "bottom_mm": 0,
+          "top_mm": 0
+        }
+      },
+      "expected_stacking": {
+        "current_layers": 8,
+        "height_ceiling_layers": 12,
+        "recommended_layers_range": {
+          "min": 9,
+          "max": 11
+        }
+      }
+    }
+  },
+  {
+    "name": "underhang-tolerance",
+    "input": {
+      "request": {
+        "pallet": {"type": "industrial", "length_mm": 1200, "width_mm": 1000},
+        "case": {"length_mm": 290, "width_mm": 200, "height_mm": 150},
+        "stack": {"layer_count": 8},
+        "tolerances": {
+          "max_overhang_l_mm": 0,
+          "max_overhang_w_mm": 0,
+          "max_underhang_l_mm": 0,
+          "max_underhang_w_mm": 0
+        },
+        "constraints": {
+          "allow_rotation_90": true,
+          "allow_interlock": false,
+          "auto_underhang": false
+        }
+      }
+    },
+    "expected": {
+      "status": "ok",
+      "min_cases_per_layer": 20,
+      "top_solution_id": "grid_4x5_rot0",
+      "expected_top_metrics": {
+        "cases_per_layer": 20,
+        "total_height_mm": 1344,
+        "edge_clearance_mm": {
+          "left_mm": 0,
+          "right_mm": 40,
+          "bottom_mm": 0,
+          "top_mm": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "impossible",
+    "input": {
+      "request": {
+        "pallet": {"type": "euro", "length_mm": 300, "width_mm": 200},
+        "case": {"length_mm": 500, "width_mm": 500, "height_mm": 100},
+        "stack": {"layer_count": 4},
+        "constraints": {"allow_rotation_90": true, "allow_interlock": false}
+      }
+    },
+    "expected": {"status": "impossible"}
+  },
+  {
+    "name": "rotation-required",
+    "input": {
+      "request": {
+        "pallet": {"type": "custom", "length_mm": 400, "width_mm": 500},
+        "case": {"length_mm": 500, "width_mm": 300, "height_mm": 100},
+        "stack": {"layer_count": 2},
+        "constraints": {"allow_rotation_90": true, "allow_interlock": false}
+      }
+    },
+    "expected": {"status": "ok", "must_include_solution_suffix": "rot90"}
+  }
+]
