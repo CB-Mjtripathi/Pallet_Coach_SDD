@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { formatApiError } from "../api/client";
 import { artifactExists, getBundle, getLogs, postDiagram, postSummaryUi } from "../api/endpoints";
 import type { Bundle, WeightUnit } from "../api/types";
 import { DiagramCarousel } from "../components/DiagramCarousel";
@@ -70,7 +71,7 @@ export function Run(): JSX.Element {
       return;
     }
     refreshData().catch((err: Error) => {
-      setBundleError(err instanceof Error ? err.message : "Failed to load run data");
+      setBundleError(formatApiError(err, "Failed to load run data"));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
@@ -93,7 +94,7 @@ export function Run(): JSX.Element {
       })
       .catch((err) => {
         if (!cancelled) {
-          setWarning(err instanceof Error ? err.message : "Failed to generate summary");
+          setWarning(formatApiError(err, "Failed to generate summary"));
         }
       })
       .finally(() => {
@@ -114,7 +115,7 @@ export function Run(): JSX.Element {
       setSummaryMarkdown(response.summary_markdown);
       setWarning(null);
     } catch (err) {
-      setWarning(err instanceof Error ? err.message : "Failed to regenerate summary");
+      setWarning(formatApiError(err, "Failed to regenerate summary"));
     } finally {
       setLoadingSummary(false);
     }
@@ -126,7 +127,7 @@ export function Run(): JSX.Element {
       await postDiagram(runId, view);
       await refreshData();
     } catch (err) {
-      setWarning(err instanceof Error ? err.message : "Failed to generate AI diagram");
+      setWarning(formatApiError(err, "Failed to generate AI diagram"));
     } finally {
       setLoadingView(null);
     }

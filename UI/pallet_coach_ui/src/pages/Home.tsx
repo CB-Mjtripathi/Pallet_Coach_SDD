@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatApiError } from "../api/client";
 import { postSolve } from "../api/endpoints";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
@@ -67,15 +68,8 @@ export function Home(): JSX.Element {
         state: { summaryPending: true },
       });
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "Failed to submit solve request";
-      // Check for common issues
-      if (errorMsg.includes("Network error") || errorMsg.includes("Unable to connect")) {
-        setError("⚠️ Connection Error: Ensure the API server is running (python start_api.ps1)");
-      } else if (errorMsg.includes("Not Found")) {
-        setError("⚠️ API Error: The request endpoint was not found. Check API configuration.");
-      } else {
-        setError(errorMsg);
-      }
+      const errorMsg = formatApiError(err, "Failed to submit solve request");
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
     }
