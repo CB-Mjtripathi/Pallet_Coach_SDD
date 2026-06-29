@@ -6,6 +6,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from pallet_coach.api.run_store import allocate_run_id, create_run_dir, write_bundle
+from pallet_coach.artifacts import write_image_prompts
 from pallet_coach.api.app import app
 
 
@@ -38,10 +40,30 @@ def _solve_request() -> dict:
 
 
 def _create_run() -> tuple[str, Path]:
-    response = client.post("/api/solve", json=_solve_request())
-    assert response.status_code == 200
-    body = response.json()
-    return body["run_id"], Path(body["out_dir"])
+    run_id = allocate_run_id()
+    run_dir = create_run_dir(run_id)
+
+    bundle = {
+        "run_id": run_id,
+        "request": _solve_request()["request"],
+        "recommender": {
+            "status": "ok",
+            "reasons": [],
+            "solutions": [],
+        },
+        "stacking": {},
+        "artifacts": {},
+        "ai_assist": {
+            "summary_generated": False,
+            "summary_ui_generated": False,
+            "diagram_flat_generated": False,
+            "diagram_3d_generated": False,
+        },
+    }
+
+    write_bundle(run_dir, bundle)
+    write_image_prompts(run_dir, bundle)
+    return run_id, run_dir
 
 
 def test_summary_endpoint_writes_artifact_and_updates_bundle(monkeypatch):
