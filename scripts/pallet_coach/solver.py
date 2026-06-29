@@ -65,7 +65,7 @@ def _candidate_axis_positions(limit_mm: int, segment_lengths_mm: list[int]) -> l
     return sorted(positions)
 
 
-def _candidate_mixed_placements(req: SolveRequestNormalized) -> list[Placement]:
+def _candidate_mixed_placements(req: SolveRequestNormalized, max_candidates: int = 256) -> list[Placement]:
     dims_by_rotation = [
         (
             req.case.length_mm if rotation == 0 else req.case.width_mm,
@@ -82,6 +82,11 @@ def _candidate_mixed_placements(req: SolveRequestNormalized) -> list[Placement]:
         req.pallet.width_mm,
         [int(dim_y) for _, dim_y, _ in dims_by_rotation],
     )
+
+    # Guard against pathological tiny-case inputs creating an enormous search space.
+    estimated_candidates = len(candidate_x) * len(candidate_y) * max(1, len(dims_by_rotation))
+    if estimated_candidates > max_candidates:
+        return []
 
     placements: list[Placement] = []
     seen: set[tuple[float, float, int]] = set()
@@ -111,7 +116,7 @@ def _best_mixed_layout(
     min_cases_to_beat: int,
     max_candidate_positions: int = 256,
 ) -> list[Placement] | None:
-    candidates = _candidate_mixed_placements(req)
+    candidates = _candidate_mixed_placements(req, max_candidates=max_candidate_positions)
     if not candidates or len(candidates) > max_candidate_positions:
         return None
 
@@ -292,6 +297,9 @@ def _case_larger_than_pallet_with_tolerance(req: SolveRequestNormalized) -> bool
     return not can_fit_any
 
 
+_MAX_CASES_PER_LAYER = 500
+
+
 def solve(req: SolveRequestNormalized, max_options: int = 25) -> SolverResult:
     if req.stack.layer_count < 1:
         return SolverResult(
@@ -314,12 +322,15 @@ def solve(req: SolveRequestNormalized, max_options: int = 25) -> SolverResult:
 
         nx_range = _grid_counts(req.pallet.length_mm, case_dim_x, req.tolerances.max_overhang_l_mm)
         ny_range = _grid_counts(req.pallet.width_mm, case_dim_y, req.tolerances.max_overhang_w_mm)
+        nx_upper = min(nx_range.stop - 1, _MAX_CASES_PER_LAYER)
+        ny_upper = ny_range.stop - 1
 
-        for nx in nx_range:
-            for ny in ny_range:
+        for nx in range(1, nx_upper + 1):
+            max_ny_for_nx = min(ny_upper, _MAX_CASES_PER_LAYER // nx)
+            if max_ny_for_nx < 1:
+                continue
+            for ny in range(1, max_ny_for_nx + 1):
                 layout = _build_grid_layout(nx, ny, case_dim_x, case_dim_y, rotation)
-                if _has_overlap(layout):
-                    continue
                 clearance = _compute_edge_clearance(req, _compute_footprint_bbox(layout))
                 tolerance_pass = _evaluate_tolerance(req, clearance, layout)
                 metrics = _compute_metrics(req, layout, tolerance_pass, interlock=False)
@@ -341,8 +352,6 @@ def solve(req: SolveRequestNormalized, max_options: int = 25) -> SolverResult:
                         interlock=True,
                         row_offset_mm=req.case.width_mm / 2.0,
                     )
-                    if _has_overlap(interlock_layout):
-                        continue
                     interlock_clearance = _compute_edge_clearance(req, _compute_footprint_bbox(interlock_layout))
                     interlock_pass = _evaluate_tolerance(req, interlock_clearance, interlock_layout)
                     interlock_metrics = _compute_metrics(
