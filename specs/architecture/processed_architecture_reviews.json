@@ -1,0 +1,24 @@
+{
+  "last_updated": "2026-06-29",
+  "reviews": [
+    {
+      "id": "ARCH-RF010-2026-06-29-001",
+      "feature_id": "RF-010",
+      "scope": "AI Summary Latency Optimization",
+      "architecture_doc": "specs/architecture/RF-010-ai-summary-latency-optimization-architecture.md",
+      "diagram_files": [
+        "specs/architecture/diagrams/RF-010-ai-summary-latency-optimization-architecture.mermaid",
+        "specs/architecture/diagrams/RF-010-summary-request-policy-flow.mermaid"
+      ],
+      "decision_ids": [
+        "ADR-RF010-001",
+        "ADR-RF010-002",
+        "ADR-RF010-003",
+        "ADR-RF010-004",
+        "ADR-RF010-005"
+      ],
+      "status": "accepted",
+      "notes": "Architecture-level blockers from RF-010 implementation plan have been resolved for execution handoff."
+    }
+  ]
+}

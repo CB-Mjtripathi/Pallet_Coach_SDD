@@ -159,4 +159,58 @@ describe("Run page", () => {
     await waitFor(() => expect(postSummaryUiMock).toHaveBeenCalledWith("R0001_20260417", false));
     expect(screen.getByText(/generated summary/i)).toBeInTheDocument();
   });
+
+  it("prevents duplicate in-flight regenerate calls", async () => {
+    const user = userEvent.setup();
+    let resolveSummary: ((value: { summary_markdown: string }) => void) | null = null;
+    postSummaryUiMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSummary = resolve;
+        })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/runs/R0001_20260417"]}>
+        <Routes>
+          <Route path="/runs/:runId" element={<Run />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(getBundleMock).toHaveBeenCalled());
+
+    const regenerate = screen.getAllByRole("button", { name: /^regenerate$/i })[0];
+    await user.click(regenerate);
+    await user.click(regenerate);
+
+    expect(postSummaryUiMock).toHaveBeenCalledTimes(1);
+    expect(postSummaryUiMock).toHaveBeenCalledWith("R0001_20260417", true);
+
+    resolveSummary?.({ summary_markdown: "done" });
+    await waitFor(() => expect(screen.getByText(/done/i)).toBeInTheDocument());
+  });
+
+  it("keeps run page actions non-blocking while summary is in flight", async () => {
+    const user = userEvent.setup();
+    postSummaryUiMock.mockImplementation(() => new Promise(() => {}));
+    postDiagramMock.mockResolvedValue({ diagram_path: "diagram_flat.png" });
+
+    render(
+      <MemoryRouter initialEntries={["/runs/R0001_20260417"]}>
+        <Routes>
+          <Route path="/runs/:runId" element={<Run />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(getBundleMock).toHaveBeenCalled());
+
+    await user.click(screen.getAllByRole("button", { name: /^regenerate$/i })[0]);
+    const diagramButton = screen.getAllByRole("button", { name: /generate flat ai diagram/i })[0];
+    expect(diagramButton).toBeEnabled();
+
+    await user.click(diagramButton);
+    await waitFor(() => expect(postDiagramMock).toHaveBeenCalledWith("R0001_20260417", "flat"));
+  });
 });

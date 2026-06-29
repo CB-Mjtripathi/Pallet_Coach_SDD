@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import importlib
+import json
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -66,12 +67,20 @@ def _create_run() -> tuple[str, Path]:
     return run_id, run_dir
 
 
+def _read_trace_events(run_dir: Path) -> list[dict]:
+    trace_path = run_dir / "ai_traces" / "ai_calls.jsonl"
+    if not trace_path.exists():
+        return []
+    return [json.loads(line) for line in trace_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
 def test_summary_endpoint_writes_artifact_and_updates_bundle(monkeypatch):
     run_id, run_dir = _create_run()
 
-    def _fake_summary(bundle: dict, style: str = "detailed"):
+    def _fake_summary(bundle: dict, style: str = "detailed", endpoint_budget_ms: int | None = None):
         assert bundle["run_id"] == run_id
-        return "# AI Summary\n\nHello", {"provider": "azure_openai", "model": "fake"}
+        assert endpoint_budget_ms is not None
+        return "# AI Summary\n\nHello", {"provider": "azure_openai", "model": "fake", "timings_ms": {"provider_ms": 10}}
 
     monkeypatch.setattr(app_module, "generate_summary_markdown", _fake_summary)
 
@@ -86,18 +95,76 @@ def test_summary_endpoint_writes_artifact_and_updates_bundle(monkeypatch):
     assert bundle["artifacts"]["recommendation_summary"]["path"] == "recommendation_summary.md"
     assert bundle["ai_assist"]["summary_generated"] is True
 
+    events = _read_trace_events(run_dir)
+    assert events
+    summary_event = events[-1]
+    assert summary_event["operation"] == "summary"
+    assert summary_event["outcome"] == "generation"
+    assert "stage_timings_ms" in summary_event
+    assert "payload_profile" in summary_event
+
 
 def test_summary_ui_endpoint_supports_force(monkeypatch):
     run_id, run_dir = _create_run()
+    bundle_data = app_module._load_bundle_or_404(run_dir)
 
     existing = run_dir / "summary_ui.md"
     existing.write_text("cached", encoding="utf-8")
+    (run_dir / "recommendation_summary.md").write_text("source", encoding="utf-8")
+
+    source_summary_hash = app_module._sha256_text("source")
+    minimized_hash = app_module._sha256_text(
+        json.dumps(app_module.build_minimized_bundle(bundle_data), sort_keys=True, ensure_ascii=False)
+    )
+    fingerprint = app_module._sha256_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "mode": "summary_ui",
+                "style": "detailed",
+                "source_summary_hash": source_summary_hash,
+                "minimized_hash": minimized_hash,
+            },
+            sort_keys=True,
+        )
+    )
+    near_fields_hash = app_module._sha256_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "mode": "summary_ui",
+                "style": "detailed",
+                "source_summary_hash": source_summary_hash,
+            },
+            sort_keys=True,
+        )
+    )
+
+    (run_dir / "summary_ui.meta.json").write_text(
+        json.dumps(
+            {
+                "created_at": app_module._iso_now(),
+                "fingerprint": fingerprint,
+                "near_fields_hash": near_fields_hash,
+                "style": "detailed",
+                "mode": "summary_ui",
+                "source_summary_hash": source_summary_hash,
+            }
+        ),
+        encoding="utf-8",
+    )
 
     calls = {"count": 0}
 
-    def _fake_summary_ui(summary_markdown: str, bundle: dict, style: str = "detailed"):
+    def _fake_summary_ui(
+        summary_markdown: str,
+        bundle: dict,
+        style: str = "detailed",
+        endpoint_budget_ms: int | None = None,
+    ):
         calls["count"] += 1
-        return "fresh ui summary", {"provider": "azure_openai", "model": "fake"}
+        assert endpoint_budget_ms is not None
+        return "fresh ui summary", {"provider": "azure_openai", "model": "fake", "timings_ms": {"provider_ms": 10}}
 
     monkeypatch.setattr(app_module, "generate_summary_ui_markdown", _fake_summary_ui)
 
@@ -146,10 +213,32 @@ def test_diagram_endpoint_writes_flat_and_3d_artifacts(monkeypatch):
 def test_summary_endpoint_returns_502_when_provider_fails(monkeypatch):
     run_id, _ = _create_run()
 
-    def _boom(bundle: dict, style: str = "detailed"):
+    def _boom(bundle: dict, style: str = "detailed", endpoint_budget_ms: int | None = None):
         raise RuntimeError("provider down")
 
     monkeypatch.setattr(app_module, "generate_summary_markdown", _boom)
 
     response = client.post("/api/summary", json={"run_id": run_id, "style": "detailed"})
     assert response.status_code == 502
+
+
+def test_summary_ui_endpoint_fallback_timeout_outcome(monkeypatch):
+    run_id, run_dir = _create_run()
+    (run_dir / "recommendation_summary.md").write_text("source", encoding="utf-8")
+
+    def _boom(*args, **kwargs):
+        raise TimeoutError("provider timeout")
+
+    monkeypatch.setattr(app_module, "generate_summary_ui_markdown", _boom)
+
+    response = client.post("/api/summary_ui", json={"run_id": run_id, "style": "detailed", "force": True})
+    assert response.status_code == 200
+    assert "AI rewrite unavailable" in response.json()["summary_markdown"]
+
+    events = _read_trace_events(run_dir)
+    assert events
+    event = events[-1]
+    assert event["operation"] == "summary_ui"
+    assert event["outcome"] == "fallback_timeout"
+    assert event["reason_code"] == "provider_timeout"
+    assert "stage_timings_ms" in event

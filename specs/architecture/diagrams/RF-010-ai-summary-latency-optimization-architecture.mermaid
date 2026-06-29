@@ -1,0 +1,38 @@
+architecture-beta
+    group user(cloud)[User Surface]
+    group workload(cloud)[Application Workload]
+    group policy(cloud)[RF-010 Policy Layer]
+    group ai(cloud)[AI Provider]
+    group observability(cloud)[Observability]
+    group storage(cloud)[Run Artifacts]
+
+    service run_ui(server)[Run UI Summary Panel] in user
+
+    service summary_api(server)[Summary Endpoints
+POST /api/summary
+POST /api/summary_ui] in workload
+
+    service reuse_policy(server)[Reuse Policy Evaluator
+(identical and near-identical)] in policy
+    service timeout_policy(server)[Timeout Retry Fallback Controller] in policy
+    service quality_guard(server)[Quality Guardrail Checks] in policy
+
+    service provider_adapter(server)[Azure Responses Adapter] in ai
+
+    service trace_sink(database)[AI Trace Events with Stage Timings] in observability
+
+    service summary_artifacts(database)[recommendation_summary.md
+summary_ui.md] in storage
+
+    run_ui:R --> L:summary_api
+    summary_api:R --> L:reuse_policy
+    reuse_policy:B --> T:summary_artifacts
+    summary_api:R --> L:timeout_policy
+    timeout_policy:R --> L:provider_adapter
+    timeout_policy:B --> T:quality_guard
+    provider_adapter:B --> T:quality_guard
+    summary_api:B --> T:summary_artifacts
+    summary_api:B --> T:trace_sink
+    reuse_policy:R --> L:trace_sink
+    timeout_policy:R --> L:trace_sink
+    quality_guard:R --> L:trace_sink

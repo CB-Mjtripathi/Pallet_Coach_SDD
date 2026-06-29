@@ -1,0 +1,42 @@
+[
+  {
+    "id": "INTAKE-2026-06-29-002",
+    "date": "2026-06-29",
+    "scope_slug": "ai-summary-latency-optimization",
+    "title": "AI Summary Latency Optimization",
+    "request_type": ["Enhancement", "Workflow Improvement"],
+    "status": "intake_processed",
+    "source_request": "AI Summary is taking too much time to load .. make it faster",
+    "artifacts": {
+      "intake": "specs/intake/ai-summary-latency-optimization-intake.md",
+      "brief": "specs/intake/ai-summary-latency-optimization-brief.md"
+    },
+    "recommended_next_agent": "engineering_lead",
+    "blocking_questions": [],
+    "non_blocking_questions": [
+      "What p95 and p99 latency targets should define success for AI Summary?",
+      "Should optimization prioritize first-load latency, repeat-load latency, or both equally?",
+      "Are any quality or freshness trade-offs acceptable to achieve performance goals?"
+    ]
+  },
+  {
+    "id": "INTAKE-2026-06-29-001",
+    "date": "2026-06-29",
+    "scope_slug": "api-runtime-env-docker-hardening",
+    "title": "API Runtime Env and Docker Hardening",
+    "request_type": ["Bug", "Enhancement"],
+    "status": "intake_processed",
+    "source_request": "some times we are getting error for api.fix this error permanently. check env and docker file for permanent fix this issue.fix env issue also . Let me know , need any help.",
+    "artifacts": {
+      "intake": "specs/intake/api-runtime-env-docker-hardening-intake.md",
+      "brief": "specs/intake/api-runtime-env-docker-hardening-brief.md"
+    },
+    "recommended_next_agent": "engineering_lead",
+    "blocking_questions": [],
+    "non_blocking_questions": [
+      "Which API endpoints fail most often: solve, summary, summary_ui, diagram, or startup itself?",
+      "Which runtime reproduces the issue most often: local scripts, Docker local container, or another deployed environment?",
+      "Is there an external env source that must remain backward compatible, such as env.ai, .env, compose, or deployment secrets?"
+    ]
+  }
+]

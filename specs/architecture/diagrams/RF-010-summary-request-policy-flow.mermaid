@@ -1,0 +1,35 @@
+flowchart TD
+    A[Summary request received] --> B[Profile classification small medium large]
+    B --> C[Compute request fingerprint and policy context]
+    C --> D{Force regenerate?}
+    D -- Yes --> H[Skip reuse and go to provider path]
+    D -- No --> E{Identical reuse eligible and fresh <= 24h?}
+    E -- Yes --> F[Return reused summary]
+    E -- No --> G{Near-identical policy enabled and fresh <= 30m?}
+    G -- Yes --> F
+    G -- No --> H
+
+    H --> I[Start endpoint budget timer]
+    I --> J[Provider attempt 1]
+    J --> K{Success?}
+    K -- Yes --> L[Quality guardrail checks]
+    L --> M{Checks pass?}
+    M -- Yes --> N[Persist generated summary]
+    M -- No --> O[Return deterministic fallback]
+
+    K -- No transient --> P{Remaining budget supports one retry?}
+    P -- Yes --> Q[Retry once with bounded jitter backoff]
+    Q --> R{Retry success?}
+    R -- Yes --> L
+    R -- No --> O
+    P -- No --> O
+
+    K -- No terminal --> O
+
+    F --> S[Emit trace outcome reused_artifact]
+    N --> T[Emit trace outcome generation]
+    O --> U[Emit trace outcome fallback_timeout or fallback_error]
+
+    S --> V[Return SummaryUiResponse or SummaryResponse]
+    T --> V
+    U --> V

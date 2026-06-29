@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { formatApiError } from "../api/client";
 import { artifactExists, getBundle, getLogs, postDiagram, postSummaryUi } from "../api/endpoints";
@@ -37,6 +37,31 @@ export function Run(): JSX.Element {
   const [warning, setWarning] = useState<string | null>(state.summaryWarning ?? null);
   const [bundleError, setBundleError] = useState<string | null>(null);
   const [summaryPending, setSummaryPending] = useState(Boolean(state.summaryPending));
+  const [summaryStatus, setSummaryStatus] = useState<string | null>(null);
+  const inFlightSummaryKeysRef = useRef<Set<string>>(new Set());
+
+  async function requestSummary(force: boolean): Promise<void> {
+    const dedupKey = `${runId}:${force ? "force" : "normal"}`;
+    if (inFlightSummaryKeysRef.current.has(dedupKey)) {
+      return;
+    }
+
+    inFlightSummaryKeysRef.current.add(dedupKey);
+    setLoadingSummary(true);
+    setSummaryStatus(force ? "Regenerating summary..." : "Generating summary...");
+    try {
+      const response = await postSummaryUi(runId, force);
+      setSummaryMarkdown(response.summary_markdown);
+      setWarning(null);
+      setSummaryStatus("Summary ready.");
+    } catch (err) {
+      setWarning(formatApiError(err, force ? "Failed to regenerate summary" : "Failed to generate summary"));
+      setSummaryStatus("Summary generation failed.");
+    } finally {
+      inFlightSummaryKeysRef.current.delete(dedupKey);
+      setLoadingSummary(false);
+    }
+  }
 
   async function refreshData(): Promise<void> {
     setBundleError(null);
@@ -81,44 +106,14 @@ export function Run(): JSX.Element {
       return;
     }
 
-    let cancelled = false;
     setSummaryPending(false);
-    setLoadingSummary(true);
-
-    postSummaryUi(runId, false)
-      .then((response) => {
-        if (!cancelled) {
-          setSummaryMarkdown(response.summary_markdown);
-          setWarning(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setWarning(formatApiError(err, "Failed to generate summary"));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoadingSummary(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    requestSummary(false).catch(() => {
+      // Errors are surfaced through state in requestSummary.
+    });
   }, [bundle, runId, summaryMarkdown, summaryPending]);
 
   async function onRegenerateSummary(): Promise<void> {
-    setLoadingSummary(true);
-    try {
-      const response = await postSummaryUi(runId, true);
-      setSummaryMarkdown(response.summary_markdown);
-      setWarning(null);
-    } catch (err) {
-      setWarning(formatApiError(err, "Failed to regenerate summary"));
-    } finally {
-      setLoadingSummary(false);
-    }
+    await requestSummary(true);
   }
 
   async function onGenerateDiagram(view: "flat" | "3d"): Promise<void> {
@@ -207,7 +202,12 @@ export function Run(): JSX.Element {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <div>
           {summaryMarkdown ? (
-            <SummaryPanel markdown={summaryMarkdown} loading={loadingSummary} onRegenerate={onRegenerateSummary} />
+            <SummaryPanel
+              markdown={summaryMarkdown}
+              loading={loadingSummary}
+              statusMessage={summaryStatus}
+              onRegenerate={onRegenerateSummary}
+            />
           ) : (
             <section className="card p-5 animate-in animate-delay-1">
               <div className="mb-4 flex items-center justify-between">
@@ -216,6 +216,7 @@ export function Run(): JSX.Element {
                   {loadingSummary ? "Regenerating" : "Generate"}
                 </Button>
               </div>
+              {summaryStatus ? <p className="mb-2 text-xs text-[rgb(var(--muted))]">{summaryStatus}</p> : null}
               <p className="text-sm text-[rgb(var(--muted))]">No UI summary artifact is available for this run yet.</p>
             </section>
           )}
