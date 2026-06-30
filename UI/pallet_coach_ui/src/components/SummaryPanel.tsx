@@ -7,10 +7,13 @@ interface SummaryPanelProps {
   markdown: string;
   loading: boolean;
   statusMessage?: string | null;
+  mode?: "rewrite_success" | "deterministic_fallback" | null;
   onRegenerate: () => void;
 }
 
-export function SummaryPanel({ markdown, loading, statusMessage, onRegenerate }: SummaryPanelProps): JSX.Element {
+export function SummaryPanel({ markdown, loading, statusMessage, mode, onRegenerate }: SummaryPanelProps): JSX.Element {
+  const modeLabel = mode === "deterministic_fallback" ? "Mode: Deterministic fallback" : mode === "rewrite_success" ? "Mode: AI rewrite" : null;
+
   return (
     <Card className="p-5 animate-in animate-delay-1">
       <div className="mb-4 flex items-center justify-between">
@@ -19,6 +22,7 @@ export function SummaryPanel({ markdown, loading, statusMessage, onRegenerate }:
           {loading ? "Regenerating" : "Regenerate"}
         </Button>
       </div>
+      {modeLabel ? <p className="mb-2 text-xs text-[rgb(var(--muted))]">{modeLabel}</p> : null}
       {statusMessage ? <p className="mb-2 text-xs text-[rgb(var(--muted))]">{statusMessage}</p> : null}
       <div className="prose prose-invert max-w-none text-sm">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>

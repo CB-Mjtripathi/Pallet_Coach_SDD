@@ -1,5 +1,45 @@
 [
   {
+    "id": "INTAKE-2026-06-30-004",
+    "date": "2026-06-30",
+    "scope_slug": "ai-summary-rewrite-connectivity-dns-remediation",
+    "title": "AI Summary Rewrite Connectivity and DNS Remediation",
+    "request_type": ["Bug", "Workflow Improvement"],
+    "status": "intake_processed",
+    "source_request": "Fix provider connectivity/DNS for AZURE_OAI_RESPONSES_ENDPOINT; force regenerate to avoid cached fallback artifact reuse; inspect newest ai_calls.jsonl reason_code values if fallback persists.",
+    "artifacts": {
+      "intake": "specs/intake/ai-summary-rewrite-connectivity-dns-remediation-intake.md",
+      "brief": "specs/intake/ai-summary-rewrite-connectivity-dns-remediation-brief.md"
+    },
+    "recommended_next_agent": "infra_agent",
+    "blocking_questions": [],
+    "non_blocking_questions": [
+      "Which environment is currently primary for remediation: local, Docker local, or hosted runtime?",
+      "Is failure currently DNS-only, or does it include auth/TLS path issues?",
+      "Who owns DNS/endpoint policy updates for the affected runtime?"
+    ]
+  },
+  {
+    "id": "INTAKE-2026-06-30-003",
+    "date": "2026-06-30",
+    "scope_slug": "ai-summary-rewrite-availability-hardening",
+    "title": "AI Summary Rewrite Availability Hardening",
+    "request_type": ["Bug", "Workflow Improvement"],
+    "status": "intake_processed",
+    "source_request": "Summary ready. AI rewrite unavailable in this environment. Showing deterministic summary instead. Run ID: R0001_20260630 Status: ok",
+    "artifacts": {
+      "intake": "specs/intake/ai-summary-rewrite-availability-hardening-intake.md",
+      "brief": "specs/intake/ai-summary-rewrite-availability-hardening-brief.md"
+    },
+    "recommended_next_agent": "engineering_lead",
+    "blocking_questions": [],
+    "non_blocking_questions": [
+      "Which environment shows the highest AI rewrite fallback frequency: local, Docker local, or hosted runtime?",
+      "What rewrite success-rate and fallback-rate targets should define readiness?",
+      "Should rewrite availability be surfaced in UI as a dedicated per-run status indicator?"
+    ]
+  },
+  {
     "id": "INTAKE-2026-06-29-002",
     "date": "2026-06-29",
     "scope_slug": "ai-summary-latency-optimization",

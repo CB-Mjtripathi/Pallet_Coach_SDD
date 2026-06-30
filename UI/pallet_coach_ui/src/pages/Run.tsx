@@ -21,6 +21,13 @@ interface RouterState {
   summaryPending?: boolean;
 }
 
+function inferSummaryMode(markdown: string): "rewrite_success" | "deterministic_fallback" {
+  if (markdown.toLowerCase().includes("ai rewrite unavailable in this environment")) {
+    return "deterministic_fallback";
+  }
+  return "rewrite_success";
+}
+
 export function Run(): JSX.Element {
   const { runId = "" } = useParams();
   const location = useLocation();
@@ -38,6 +45,7 @@ export function Run(): JSX.Element {
   const [bundleError, setBundleError] = useState<string | null>(null);
   const [summaryPending, setSummaryPending] = useState(Boolean(state.summaryPending));
   const [summaryStatus, setSummaryStatus] = useState<string | null>(null);
+  const [summaryMode, setSummaryMode] = useState<"rewrite_success" | "deterministic_fallback" | null>(null);
   const inFlightSummaryKeysRef = useRef<Set<string>>(new Set());
 
   async function requestSummary(force: boolean): Promise<void> {
@@ -52,8 +60,10 @@ export function Run(): JSX.Element {
     try {
       const response = await postSummaryUi(runId, force);
       setSummaryMarkdown(response.summary_markdown);
+      const mode = inferSummaryMode(response.summary_markdown);
+      setSummaryMode(mode);
       setWarning(null);
-      setSummaryStatus("Summary ready.");
+      setSummaryStatus(mode === "rewrite_success" ? "Summary ready (AI rewrite)." : "Summary ready (deterministic fallback).");
     } catch (err) {
       setWarning(formatApiError(err, force ? "Failed to regenerate summary" : "Failed to generate summary"));
       setSummaryStatus("Summary generation failed.");
@@ -78,16 +88,25 @@ export function Run(): JSX.Element {
         const summaryOk = await artifactExists(runId, summaryPath);
         if (summaryOk) {
           const response = await fetch(`/output/${runId}/${summaryPath}`);
-          setSummaryMarkdown(await response.text());
+          const markdown = await response.text();
+          setSummaryMarkdown(markdown);
+          const mode = inferSummaryMode(markdown);
+          setSummaryMode(mode);
+          setSummaryStatus(mode === "rewrite_success" ? "Summary loaded (AI rewrite)." : "Summary loaded (deterministic fallback).");
         } else {
           setSummaryMarkdown("");
+          setSummaryMode(null);
+          setSummaryStatus(null);
         }
       } catch (err) {
         setSummaryMarkdown("");
+        setSummaryMode(null);
         setWarning(err instanceof Error ? err.message : "Failed to load summary artifact");
       }
     } else {
       setSummaryMarkdown("");
+      setSummaryMode(null);
+      setSummaryStatus(null);
     }
   }
 
@@ -206,6 +225,7 @@ export function Run(): JSX.Element {
               markdown={summaryMarkdown}
               loading={loadingSummary}
               statusMessage={summaryStatus}
+              mode={summaryMode}
               onRegenerate={onRegenerateSummary}
             />
           ) : (

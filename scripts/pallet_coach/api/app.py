@@ -19,6 +19,7 @@ from ..ai.azure_responses import (
     generate_summary_ui_markdown,
 )
 from ..ai.google_ai_studio import generate_diagram_image
+from ..ai.rewrite_readiness import classify_rewrite_exception, evaluate_rewrite_readiness
 from ..ai.tracing import append_ai_trace
 from ..artifacts import (
     update_bundle_artifacts,
@@ -132,6 +133,16 @@ def _load_bundle_or_404(run_dir: Path) -> dict[str, Any]:
 
 
 def _build_summary_ui_fallback(source_summary: str, reason: str) -> str:
+    fallback = source_summary.strip() or "No deterministic summary available."
+    return (
+        "# Recommendation Summary\n\n"
+        "_AI rewrite unavailable in this environment. Showing deterministic summary instead._\n\n"
+        f"{fallback}\n\n"
+        f"---\n\nProvider error: {reason}\n"
+    )
+
+
+def _build_summary_fallback(source_summary: str, reason: str) -> str:
     fallback = source_summary.strip() or "No deterministic summary available."
     return (
         "# Recommendation Summary\n\n"
@@ -456,6 +467,43 @@ def summary_endpoint(payload: SummaryRequest) -> SummaryResponse:
 
     append_run_log(run_dir, "AI summary generation started")
 
+    readiness = evaluate_rewrite_readiness()
+    readiness_status = readiness.get("status", "fail")
+    if readiness_status != "pass":
+        source_summary = summary_path.read_text(encoding="utf-8") if summary_path.exists() else ""
+        reason = str(readiness.get("message", "rewrite readiness failed"))
+        summary_markdown = _build_summary_fallback(source_summary, reason)
+        summary_path.write_text(summary_markdown, encoding="utf-8")
+        stage_timings["provider_ms"] = 0
+        stage_timings["response_parse_ms"] = 0
+        stage_timings["artifact_write_ms"] = 0
+        stage_timings["serialize_ms"] = 0
+        stage_timings["total_ms"] = int((time.perf_counter() - request_started) * 1000)
+
+        append_run_log(run_dir, "AI summary rewrite skipped due to readiness failure")
+        append_ai_trace(
+            run_dir,
+            {
+                "provider": "readiness",
+                "operation": "summary",
+                "endpoint": "/api/summary",
+                "run_id": payload.run_id,
+                "payload_profile": payload_profile,
+                "outcome": "fallback",
+                "rewrite_mode": "deterministic_fallback",
+                "reason_code": readiness.get("reason_code", "config_missing"),
+                "readiness_status": readiness_status,
+                "stage_timings_ms": stage_timings,
+            },
+        )
+
+        return SummaryResponse(
+            run_id=payload.run_id,
+            out_dir=str(run_dir),
+            summary_path="recommendation_summary.md",
+            summary_markdown=summary_markdown,
+        )
+
     try:
         summary_markdown, meta = generate_summary_markdown(
             bundle,
@@ -466,9 +514,16 @@ def summary_endpoint(payload: SummaryRequest) -> SummaryResponse:
         stage_timings["provider_ms"] = int(provider_timings.get("provider_ms", meta.get("latency_ms", 0)) or 0)
         stage_timings["response_parse_ms"] = int(provider_timings.get("response_parse_ms", 0) or 0)
     except Exception as exc:
+        reason_code = classify_rewrite_exception(exc)
+        source_summary = summary_path.read_text(encoding="utf-8") if summary_path.exists() else ""
+        summary_markdown = _build_summary_fallback(source_summary, str(exc))
+        summary_path.write_text(summary_markdown, encoding="utf-8")
         stage_timings["provider_ms"] = int((time.perf_counter() - request_started) * 1000)
+        stage_timings["response_parse_ms"] = 0
+        stage_timings["artifact_write_ms"] = 0
+        stage_timings["serialize_ms"] = 0
         stage_timings["total_ms"] = int((time.perf_counter() - request_started) * 1000)
-        append_run_log(run_dir, f"AI summary generation failed: {exc}")
+        append_run_log(run_dir, f"AI summary generation failed, deterministic fallback used: {exc}")
         append_ai_trace(
             run_dir,
             {
@@ -477,13 +532,20 @@ def summary_endpoint(payload: SummaryRequest) -> SummaryResponse:
                 "endpoint": "/api/summary",
                 "run_id": payload.run_id,
                 "payload_profile": payload_profile,
-                "outcome": "provider_error",
+                "outcome": "fallback",
+                "rewrite_mode": "deterministic_fallback",
                 "error": str(exc),
-                "reason_code": "provider_exception",
+                "reason_code": reason_code,
+                "readiness_status": "pass",
                 "stage_timings_ms": stage_timings,
             },
         )
-        raise HTTPException(status_code=502, detail=f"Summary generation failed: {exc}") from exc
+        return SummaryResponse(
+            run_id=payload.run_id,
+            out_dir=str(run_dir),
+            summary_path="recommendation_summary.md",
+            summary_markdown=summary_markdown,
+        )
 
     stage_started = time.perf_counter()
     summary_path.write_text(summary_markdown, encoding="utf-8")
@@ -517,7 +579,9 @@ def summary_endpoint(payload: SummaryRequest) -> SummaryResponse:
             "run_id": payload.run_id,
             "payload_profile": payload_profile,
             "outcome": "generation",
+            "rewrite_mode": "rewrite_success",
             "reason_code": "provider_success",
+            "readiness_status": "pass",
             "policy_tier": "none",
             "stage_timings_ms": stage_timings,
         },
@@ -624,32 +688,50 @@ def summary_ui_endpoint(payload: SummaryUiRequest) -> SummaryUiResponse:
 
     append_run_log(run_dir, "AI summary_ui generation started")
 
-    try:
-        summary_markdown, meta = generate_summary_ui_markdown(
-            source_summary,
-            bundle,
-            style=payload.style,
-            endpoint_budget_ms=_retry_budget_ms(),
-        )
-        provider_timings = meta.get("timings_ms", {}) if isinstance(meta, dict) else {}
-        stage_timings["provider_ms"] = int(provider_timings.get("provider_ms", meta.get("latency_ms", 0)) or 0)
-        stage_timings["response_parse_ms"] = int(provider_timings.get("response_parse_ms", 0) or 0)
-        outcome = "generation"
-        reason_code = "provider_success"
-        provider_name = "azure_openai"
-    except Exception as exc:
-        append_run_log(run_dir, f"AI summary_ui generation failed: {exc}")
-        outcome = _classify_fallback(exc)
-        reason_code = "provider_timeout" if outcome == "fallback_timeout" else "provider_error"
-        provider_name = "fallback"
-        summary_markdown = _build_summary_ui_fallback(source_summary, str(exc))
+    readiness = evaluate_rewrite_readiness()
+    readiness_status = readiness.get("status", "fail")
+
+    if readiness_status != "pass":
+        summary_markdown = _build_summary_ui_fallback(source_summary, str(readiness.get("message", "rewrite readiness failed")))
         meta = {
-            "provider": "fallback",
+            "provider": "readiness",
             "model": "deterministic",
-            "reason": str(exc),
+            "reason": readiness.get("message", "rewrite readiness failed"),
         }
-        stage_timings["provider_ms"] = int((time.perf_counter() - request_started) * 1000)
-        append_run_log(run_dir, "AI summary_ui fallback generated from deterministic summary")
+        outcome = "fallback"
+        reason_code = readiness.get("reason_code", "config_missing")
+        provider_name = "fallback"
+        stage_timings["provider_ms"] = 0
+        stage_timings["response_parse_ms"] = 0
+        append_run_log(run_dir, "AI summary_ui rewrite skipped due to readiness failure")
+    else:
+        try:
+            summary_markdown, meta = generate_summary_ui_markdown(
+                source_summary,
+                bundle,
+                style=payload.style,
+                endpoint_budget_ms=_retry_budget_ms(),
+            )
+            provider_timings = meta.get("timings_ms", {}) if isinstance(meta, dict) else {}
+            stage_timings["provider_ms"] = int(provider_timings.get("provider_ms", meta.get("latency_ms", 0)) or 0)
+            stage_timings["response_parse_ms"] = int(provider_timings.get("response_parse_ms", 0) or 0)
+            outcome = "generation"
+            reason_code = "provider_success"
+            provider_name = "azure_openai"
+        except Exception as exc:
+            append_run_log(run_dir, f"AI summary_ui generation failed: {exc}")
+            outcome = _classify_fallback(exc)
+            reason_code = classify_rewrite_exception(exc)
+            provider_name = "fallback"
+            summary_markdown = _build_summary_ui_fallback(source_summary, str(exc))
+            meta = {
+                "provider": "fallback",
+                "model": "deterministic",
+                "reason": str(exc),
+            }
+            stage_timings["provider_ms"] = int((time.perf_counter() - request_started) * 1000)
+            stage_timings["response_parse_ms"] = 0
+            append_run_log(run_dir, "AI summary_ui fallback generated from deterministic summary")
 
     stage_started = time.perf_counter()
     summary_ui_path.write_text(summary_markdown, encoding="utf-8")
@@ -684,7 +766,9 @@ def summary_ui_endpoint(payload: SummaryUiRequest) -> SummaryUiResponse:
             "provider": provider_name,
             "payload_profile": payload_profile,
             "outcome": outcome,
+            "rewrite_mode": "rewrite_success" if outcome == "generation" else "deterministic_fallback",
             "reason_code": reason_code,
+            "readiness_status": readiness_status,
             "policy_tier": "none" if payload.force else policy_tier,
             "stage_timings_ms": stage_timings,
         },

@@ -10,6 +10,7 @@ graph LR
         RF002[RF-002<br/>API and Run Management]
         RF004[RF-004<br/>AI Integrations]
         RF010[RF-010<br/>AI Summary Latency Optimization]
+        RF011[RF-011<br/>AI Summary Rewrite Availability Hardening]
         RF008[RF-008<br/>Deployment and Ops]
     end
 
@@ -39,3 +40,7 @@ graph LR
     RF004 --> RF010
     RF005 --> RF010
     RF010 --> RF007
+    RF002 --> RF011
+    RF004 --> RF011
+    RF010 --> RF011
+    RF011 --> RF007

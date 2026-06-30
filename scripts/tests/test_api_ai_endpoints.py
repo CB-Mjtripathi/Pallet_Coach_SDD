@@ -5,6 +5,7 @@ import importlib
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from pallet_coach.api.run_store import allocate_run_id, create_run_dir, write_bundle
@@ -15,6 +16,15 @@ from pallet_coach.api.app import app
 app_module = importlib.import_module("pallet_coach.api.app")
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _default_rewrite_readiness(monkeypatch):
+    monkeypatch.setattr(
+        app_module,
+        "evaluate_rewrite_readiness",
+        lambda: {"status": "pass", "reason_code": "ready", "message": "ok"},
+    )
 
 
 def _solve_request() -> dict:
@@ -210,7 +220,7 @@ def test_diagram_endpoint_writes_flat_and_3d_artifacts(monkeypatch):
     assert bundle["ai_assist"]["diagram_3d_generated"] is True
 
 
-def test_summary_endpoint_returns_502_when_provider_fails(monkeypatch):
+def test_summary_endpoint_uses_fallback_when_provider_fails(monkeypatch):
     run_id, _ = _create_run()
 
     def _boom(bundle: dict, style: str = "detailed", endpoint_budget_ms: int | None = None):
@@ -219,7 +229,8 @@ def test_summary_endpoint_returns_502_when_provider_fails(monkeypatch):
     monkeypatch.setattr(app_module, "generate_summary_markdown", _boom)
 
     response = client.post("/api/summary", json={"run_id": run_id, "style": "detailed"})
-    assert response.status_code == 502
+    assert response.status_code == 200
+    assert "AI rewrite unavailable" in response.json()["summary_markdown"]
 
 
 def test_summary_ui_endpoint_fallback_timeout_outcome(monkeypatch):
@@ -240,5 +251,42 @@ def test_summary_ui_endpoint_fallback_timeout_outcome(monkeypatch):
     event = events[-1]
     assert event["operation"] == "summary_ui"
     assert event["outcome"] == "fallback_timeout"
-    assert event["reason_code"] == "provider_timeout"
+    assert event["reason_code"] == "timeout"
+    assert event["rewrite_mode"] == "deterministic_fallback"
+    assert event["readiness_status"] == "pass"
     assert "stage_timings_ms" in event
+
+
+def test_summary_ui_readiness_failure_skips_provider_and_classifies(monkeypatch):
+    run_id, run_dir = _create_run()
+    (run_dir / "recommendation_summary.md").write_text("source", encoding="utf-8")
+
+    monkeypatch.setattr(
+        app_module,
+        "evaluate_rewrite_readiness",
+        lambda: {
+            "status": "fail",
+            "reason_code": "config_missing",
+            "message": "Missing required rewrite config: AZURE_OAI_API_KEY",
+        },
+    )
+
+    called = {"value": False}
+
+    def _should_not_call(*args, **kwargs):
+        called["value"] = True
+        raise AssertionError("provider should not be called when readiness fails")
+
+    monkeypatch.setattr(app_module, "generate_summary_ui_markdown", _should_not_call)
+
+    response = client.post("/api/summary_ui", json={"run_id": run_id, "style": "detailed", "force": True})
+    assert response.status_code == 200
+    assert "AI rewrite unavailable" in response.json()["summary_markdown"]
+    assert called["value"] is False
+
+    events = _read_trace_events(run_dir)
+    event = events[-1]
+    assert event["operation"] == "summary_ui"
+    assert event["outcome"] == "fallback"
+    assert event["reason_code"] == "config_missing"
+    assert event["readiness_status"] == "fail"

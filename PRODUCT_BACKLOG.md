@@ -9,6 +9,7 @@
 ### High Priority (Current Sprint)
 - [ ] RF-009: High-Resolution 3D Isometric Layer Visualization (Source: user request 2026-04-17)
 - [x] RF-010: AI Summary Latency Optimization (Source: INTAKE-2026-06-29-002)
+- [ ] RF-011: AI Summary Rewrite Availability Hardening (Source: INTAKE-2026-06-30-003)
 
 ### Medium Priority (Next Sprint)
 - [ ] On-demand render quality selector (standard vs high-resolution) (Source: RF-009 open questions)
@@ -39,3 +40,4 @@
 
 - RF-001 through RF-008 are implemented baseline capabilities for Step 1 MVP.
 - RF-009 captures the current visualization enhancement request for 3D stack readability and JSON hide/show UX.
+- RF-011 captures AI rewrite unavailability and deterministic fallback hardening requirements.

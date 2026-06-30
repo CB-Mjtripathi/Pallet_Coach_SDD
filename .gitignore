@@ -14,3 +14,6 @@ env.ai
 # Outputs and traces
 04_Output/
 ai_traces/
+
+#agents and prompts
+.github/

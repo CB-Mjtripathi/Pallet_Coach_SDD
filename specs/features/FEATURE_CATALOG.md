@@ -1,6 +1,6 @@
 # Feature Catalog
-**Last Updated:** 2026-06-29
-**Total Features:** 10
+**Last Updated:** 2026-06-30
+**Total Features:** 11
 
 ---
 
@@ -20,6 +20,7 @@
 | RF-002 | API Layer and Run Management | Implemented | Critical | Phase 1 |
 | RF-004 | AI Integrations and Traceability | Implemented | High | Phase 1 |
 | RF-010 | AI Summary Latency Optimization | Implemented | High | Phase 1.2 |
+| RF-011 | AI Summary Rewrite Availability Hardening | Specification | High | Phase 1.3 |
 | RF-008 | Deployment, Security, and Operational Readiness | Implemented | High | Phase 1 |
 
 ### Frontend Experience
@@ -48,6 +49,7 @@
 
 ### Specification
 - RF-009: High-Resolution 3D Isometric Layer Visualization
+- RF-011: AI Summary Rewrite Availability Hardening
 
 ### Future
 - Phase 2: Extended pallet presets and custom workflows
@@ -80,6 +82,10 @@ graph TD
     RF004 --> RF010
     RF005 --> RF010
     RF010 --> RF007
+    RF002 --> RF011[RF-011 AI Summary Rewrite Availability Hardening]
+    RF004 --> RF011
+    RF010 --> RF011
+    RF011 --> RF007
 ```
 
 ---
@@ -92,9 +98,9 @@ graph TD
 - Non-functional and deployment sections covered (10, 13): 2 / 2 (100%)
 
 **Feature Extraction Status:**
-- Total major feature groups identified: 10
-- Feature files created: 10
-- User stories documented: 32
+- Total major feature groups identified: 11
+- Feature files created: 11
+- User stories documented: 36
 - Remaining to document: 0 for Step 1 MVP plus known post-MVP enhancements
 
 ---
@@ -105,7 +111,9 @@ Primary source used for extraction:
 - Attached document: `requirement.md`
 - User request: 3D stack visibility and exploded layering enhancement (2026-04-17)
 - Intake request: AI Summary latency optimization (INTAKE-2026-06-29-002)
+- Intake request: AI rewrite unavailable deterministic fallback behavior (INTAKE-2026-06-30-003)
 
 Extraction note:
 - Feature ID sequence extended to RF-009 for visualization clarity enhancement.
 - Feature ID sequence extended to RF-010 for AI Summary latency optimization.
+- Feature ID sequence extended to RF-011 for AI Summary rewrite availability hardening.
